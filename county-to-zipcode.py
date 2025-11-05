@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import zipfile
 from io import BytesIO
+from datetime import datetime
 from uszipcode import SearchEngine
 
 
@@ -13,7 +14,7 @@ def load_data():
     The data is cached to improve performance.
     """
     try:
-        # Use uszipcode SearchEngine to get all zip codes.
+        # Use uszipcode SearchEngine to get all zip codes
         # This returns a list of SimpleZipcode objects.
         search = SearchEngine()
         all_zips = search.by_state(state=None, returns=0) # returns=0 gets all zipcodes
@@ -45,13 +46,15 @@ def create_zip_archive(df_filtered):
         BytesIO: A bytes buffer containing the zip archive.
     """
     zip_buffer = BytesIO()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         # Group data by the unique 'county_state' identifier
         grouped = df_filtered.groupby('county_state')
         for county_name, group in grouped:
             # Sanitize the county name to create a valid filename
-            # e.g., "Los Angeles, California" -> "Los_Angeles_California.csv"
-            filename = f"{county_name.replace(', ', '_').replace(' ', '_')}.csv"
+            # e.g., "Los Angeles, California" -> "Los_Angeles_California_20231105_045848.csv"
+            filename = f"{county_name.replace(', ', '_').replace(' ', '_')}_{timestamp}.csv"
 
             # Convert the group's zip codes to a CSV string
             csv_string = group[['zipcode']].to_csv(index=False)
